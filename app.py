@@ -152,113 +152,95 @@ def nhap_kho_post():
         data = request.get_json()
         if not data:
             return jsonify({'status': 'error', 'message': 'Không có dữ liệu'})
-          # Validate required fields
+        # Validate required fields
         required_fields = ['group_use', 'product_code', 'classify', 'part_code', 'material_name', 'specification', 'brand', 'unit', 'location', 'quantity', 'imported_by']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'status': 'error', 'message': f'Thiếu trường bắt buộc: {field}'})
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+        quantity = float(data['quantity'])
         # Check if material exists by specification
-        existing = cursor.execute('SELECT material_id FROM MATERIAL WHERE specification = ?', (data['specification'],)).fetchone()
-        
+        existing = cursor.execute('SELECT material_id, input, opening_stock, output FROM MATERIAL WHERE specification = ?', (data['specification'],)).fetchone()
         if existing:
-            # Update existing material
-            material_id = existing[0]
+            material_id = existing['material_id'] if isinstance(existing, sqlite3.Row) else existing[0]
+            old_input = existing['input'] if isinstance(existing, sqlite3.Row) else existing[1]
+            opening_stock = existing['opening_stock'] if isinstance(existing, sqlite3.Row) else existing[2]
+            output = existing['output'] if isinstance(existing, sqlite3.Row) else existing[3]
+            # Cộng dồn input
+            new_input = (old_input or 0) + quantity
+            # closing_stock tự động tính lại
+            closing_stock = (opening_stock or 0) + new_input - (output or 0)
             cursor.execute('''
                 UPDATE MATERIAL SET 
                     group_name = ?, product_code = ?, classification = ?, part_code = ?,
                     material_name = ?, brand_name = ?, unit = ?, location = ?,
-                    opening_stock = ?, closing_stock = ?, safety_stock = ?,
-                    purchase_se = ?, purchase_order = ?,
-                    cost_opening_stock = ?, cost_input = ?, cost_output = ?,
-                    cost_closing_stock = ?, cost_safety_stock = ?,
-                    price = ?, currency = ?, imported_by = ?,
-                    updated_at = ?, last_update = ?, last_time = ?
+                    input = ?, closing_stock = ?, imported_by = ?, updated_at = ?, last_update = ?, last_time = ?
                 WHERE material_id = ?
             ''', (
                 data['group_use'], data['product_code'], data['classify'], data['part_code'],
                 data['material_name'], data['brand'], data['unit'], data['location'],
-                float(data.get('opening_stock', 0)), float(data.get('closing_stock', 0)), float(data.get('safety_stock', 0)),
-                data.get('purchase_se', ''), data.get('purchase_order', ''),
-                float(data.get('cost_opening_stock', 0)), float(data.get('cost_input', 0)), float(data.get('cost_output', 0)),
-                float(data.get('cost_closing_stock', 0)), float(data.get('cost_safety_stock', 0)),
-                float(data.get('price', 0)), data.get('currency', 'VND'), data['imported_by'],
+                new_input, closing_stock, data['imported_by'],
                 current_time, current_time, current_time, material_id
             ))
         else:
             # Insert new material
+            opening_stock = float(data.get('opening_stock', 0))
+            output = float(data.get('output', 0))
+            closing_stock = opening_stock + quantity - output
             cursor.execute('''
                 INSERT INTO MATERIAL (
                     group_name, product_code, classification, part_code, material_name,
                     specification, brand_name, unit, location,
-                    opening_stock, closing_stock, safety_stock,
-                    purchase_se, purchase_order,
-                    cost_opening_stock, cost_input, cost_output,
-                    cost_closing_stock, cost_safety_stock,
-                    price, currency, imported_by,
+                    opening_stock, input, output, closing_stock, imported_by,
                     created_at, updated_at, last_update, last_time
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['group_use'], data['product_code'], data['classify'], data['part_code'],
                 data['material_name'], data['specification'], data['brand'], data['unit'], data['location'],
-                float(data.get('opening_stock', 0)), float(data.get('closing_stock', 0)), float(data.get('safety_stock', 0)),
-                data.get('purchase_se', ''), data.get('purchase_order', ''),
-                float(data.get('cost_opening_stock', 0)), float(data.get('cost_input', 0)), float(data.get('cost_output', 0)),
-                float(data.get('cost_closing_stock', 0)), float(data.get('cost_safety_stock', 0)),
-                float(data.get('price', 0)), data.get('currency', 'VND'), data['imported_by'],
+                opening_stock, quantity, output, closing_stock, data['imported_by'],
                 current_time, current_time, current_time, current_time
             ))
             material_id = cursor.lastrowid
-          # Add stock transaction
-        quantity = float(data['quantity'])
+        # Add stock transaction
         if quantity > 0:
             ref_number = f"INPUT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
             cursor.execute('''
                 INSERT INTO STOCK_TRANSACTION (
                     material_id, transaction_type, quantity, transaction_date,
-                    reference_number, notes, imported_by, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    reference_number, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
                 material_id, 'input', quantity, current_time,
-                ref_number, f'Nhập kho bởi {data["imported_by"]}', data['imported_by'], current_time
+                ref_number, f'Nhập kho bởi {data["imported_by"]}', current_time
             ))
-          # Generate QR code
+        # Generate QR code
         try:
             import qrcode
             import os
             import re
-            
-            # Clean specification for filename (remove special characters)
             clean_spec = re.sub(r'[^\w\-_\.]', '_', data['specification'])
-            
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
             qr.add_data(data['specification'])
             qr.make(fit=True)
             qr_img = qr.make_image(fill_color="black", back_color="white")
-            
-            # Save QR code
             qr_filename = f"{clean_spec}.png"
             qr_path = f"static/qr_codes/{qr_filename}"
             os.makedirs("static/qr_codes", exist_ok=True)
             qr_img.save(qr_path)
-            
             qr_code_name = clean_spec
         except Exception as qr_error:
             print(f"QR generation error: {qr_error}")
             qr_code_name = None
-        
         conn.commit()
         conn.close()
-        
         return jsonify({
-            'status': 'success', 
+            'status': 'success',
             'message': 'Nhập kho thành công!',
-            'qr_code': qr_code_name        })
-        
+            'qr_code': qr_code_name
+        })
     except ValueError as ve:
         return jsonify({'status': 'error', 'message': f'Lỗi dữ liệu: {str(ve)}'})
     except Exception as e:
@@ -611,7 +593,7 @@ def export_excel():
             'Specification': row['specification'] if row['specification'] else '',
             'Brand': row['brand_name'] if row['brand_name'] else '',
             'Unit': row['unit'] if row['unit'] else '',
-            'Supplier Name': row['supplier_name'] if row['supplier_name'] else '',
+           
             'Safety Stock': row['safety_stock'] if row['safety_stock'] else '',
             'Location Safety': row['location_safety'] if row['location_safety'] else '',
             'Purchase Order': row['purchase_order'] if row['purchase_order'] else '',
