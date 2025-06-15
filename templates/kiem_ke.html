@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm kê kho - Quản lý kho PE</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        body {font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .quick-btn, .export-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+        }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+    </style>
+</head>
+<body>    <nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Kiểm kê kho - Quản lý kho PE</h1>
+        <form id="kiemke-form">
+            <label for="qr_code">Mã QR vật tư</label>
+            <input type="text" id="qr_code" name="qr_code" required>
+            <label for="inventory">Số lượng kiểm kê thực tế</label>
+            <input type="number" id="inventory" name="inventory" required min="0">
+            <button type="submit">Cập nhật kiểm kê</button>
+        </form>
+        <div class="result" id="result"></div>
+        <div id="qr-reader" style="max-width:400px;margin:0 auto 18px auto;"></div>
+    </div>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+    let productCache = {};
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('qr_code').value = decodedText;
+        fetchProductInfo(decodedText);
+    }
+    let config = { fps: 10, qrbox: 250, facingMode: { exact: 'user' } };
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader", config
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+
+    document.getElementById('qr_code').addEventListener('change', function() {
+        fetchProductInfo(this.value);
+    });
+    function fetchProductInfo(qr_code) {
+        if (!qr_code) return;
+        if (productCache[qr_code]) return;
+        fetch(`/api/product-info/${qr_code}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    productCache[qr_code] = data.product;
+                    // Hiển thị thông tin vật tư khi quét mã QR
+                    const product = data.product;
+                    document.getElementById('result').innerHTML =
+                        `Tên vật tư: ${product.material_name} | Hãng: ${product.brand_name || product.brand} | Quy cách: ${product.specification} | Mã hàng: ${product.part_code} | Phân loại BU: ${product.classify || product.classification || ''}`;
+                }
+            });
+    }
+
+    document.getElementById('kiemke-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const qr_code = document.getElementById('qr_code').value.trim();
+        const inventory = document.getElementById('inventory').value.trim();
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '';
+        // Gửi specification thay vì part_code
+        const res = await fetch('/kiem-ke', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qr_code, inventory })
+        });
+        const data = await res.json();
+        if(data.status === 'success') {
+            resultDiv.innerHTML = '<span class="success">' + data.message + '</span>';
+        } else {
+            resultDiv.innerHTML = '<span class="error">' + data.message + '</span>';
+        }    });
+    </script>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

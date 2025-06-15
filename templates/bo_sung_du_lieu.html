@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bổ sung dữ liệu báo cáo - Quản lý kho PE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        html, body {
+            height: 100%; 
+            margin: 0; 
+            padding: 0;
+        }
+        body { 
+            font-family: 'Roboto', Arial, sans-serif; 
+            background: #f4f8fd; 
+            margin: 0; 
+        }
+        .container, .main-container, .nk-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .nk-btn-main {
+            background: linear-gradient(90deg, #1976d2 0%, #1565c0 100%) !important;
+            color: #fff !important;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 28px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.2s;
+        }
+        button:hover, .nk-btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25,118,210,0.3);
+        }
+        .nk-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px 32px;
+            justify-content: center;
+            margin-bottom: 18px;
+            background: #f4f8fd;
+            padding: 18px 12px 12px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.06);
+        }
+        .nk-form-group {
+            flex: 1 1 320px;
+            min-width: 260px;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+        }
+        .nk-form-group label {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .nk-form-group input, .nk-form-group select, .nk-form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid #b6c6e3;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fafdff;
+            transition: border-color 0.2s;
+        }
+        .nk-form-group input:focus, .nk-form-group select:focus, .nk-form-group textarea:focus {
+            border-color: #1976d2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(25,118,210,0.1);
+        }
+        .nk-form-group textarea { 
+            min-height: 38px; 
+        }
+        .nk-title {
+            text-align: center;
+            color: #1976d2;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        .nk-title span {
+            font-size: 1.6rem;
+            margin-right: 8px;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #f44336;
+        }
+        .loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        #result {
+            min-height: 20px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="nk-container">
+        <h1 class="nk-title"><span>📝</span> Bổ sung dữ liệu vào báo cáo (30 cột)</h1>
+        
+        <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #1976d2;">
+            <h3 style="margin: 0 0 8px 0; color: #1976d2;">📋 Hướng dẫn:</h3>
+            <p style="margin: 0; color: #1565c0;">
+                • Nhập <strong>Specification</strong> trước để tự động điền thông tin (nếu vật tư đã tồn tại)<br>
+                • Tất cả các trường đều là tùy chọn - điền thông tin theo nhu cầu<br>
+                • Form đã được cập nhật với cấu trúc 30 cột chính xác
+            </p>
+        </div>
+
+        <form id="report-form" class="nk-form">
+            <!-- Thông tin cơ bản -->
+            <div class="nk-form-group">
+                <label>Group use (Nhóm sử dụng):</label>
+                <input type="text" id="group_name" name="group_name" placeholder="Nhập nhóm sử dụng">
+            </div>
+            <div class="nk-form-group">
+                <label>Product code (Mã hàng):</label>
+                <input type="text" id="product_code" name="product_code" placeholder="Nhập mã hàng">
+            </div>
+            <div class="nk-form-group">
+                <label>Classify (Phân loại BU):</label>
+                <input type="text" id="classification" name="classification" placeholder="Nhập phân loại BU">
+            </div>
+            <div class="nk-form-group">
+                <label>Part Code:</label>
+                <input type="text" id="part_code" name="part_code" placeholder="Nhập mã chi tiết">
+            </div>
+            <div class="nk-form-group">
+                <label>Material name (Tên hàng hóa):</label>
+                <input type="text" id="material_name" name="material_name" placeholder="Nhập tên vật tư">
+            </div>
+            <div class="nk-form-group">
+                <label>Specification/Drawing (Thông số kỹ thuật) 🔍:</label>
+                <input type="text" id="specification" name="specification" placeholder="Nhập thông số kỹ thuật và nhấn Tab để auto-fill" 
+                       title="Nhập specification và nhấn Tab để tự động điền thông tin nếu vật tư đã tồn tại">
+                <small style="color: #666; font-size: 0.85em;">💡 Gợi ý: Thử nhập "Thread: M6x1.0, Tube OD: 8mm, Material: Brass, Max Pressure: 1.0MPa"</small>
+            </div>
+            <div class="nk-form-group">
+                <label>Brand (Nhà SX):</label>
+                <input type="text" id="brand_name" name="brand_name" placeholder="Nhập nhà sản xuất">
+            </div>
+            <div class="nk-form-group">
+                <label>Unit (Đơn vị):</label>
+                <input type="text" id="unit" name="unit" placeholder="Nhập đơn vị (pcs, kg, m...)">
+            </div>
+
+            <!-- Thông tin tồn kho -->
+            <div class="nk-form-group">
+                <label>Opening stock (Tồn đầu kỳ):</label>
+                <input type="number" id="opening_stock" name="opening_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Input (Nhập):</label>
+                <input type="number" id="input" name="input" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Output (Xuất):</label>
+                <input type="number" id="output" name="output" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Closing stock (Tồn cuối kỳ):</label>
+                <input type="number" id="closing_stock" name="closing_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Inventory (Kiểm kê):</label>
+                <input type="number" id="inventory" name="inventory" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Location (Vị trí):</label>
+                <input type="text" id="location" name="location" placeholder="A1-B2-C3">
+            </div>
+            <div class="nk-form-group">
+                <label>Safety Stock (Tồn kho an toàn):</label>
+                <input type="number" id="safety_stock" name="safety_stock" placeholder="0" step="any" value="0">
+            </div>
+
+            <!-- Thông tin mua hàng -->
+            <div class="nk-form-group">
+                <label>Purchase SE (SE mua hàng):</label>
+                <input type="text" id="purchase_se" name="purchase_se" placeholder="Nhập SE mua hàng">
+            </div>
+            <div class="nk-form-group">
+                <label>Purchase Order (Đơn hàng mua):</label>
+                <input type="text" id="purchase_order" name="purchase_order" placeholder="Nhập số PO">
+            </div>
+
+            <!-- Thông tin chi phí -->
+            <div class="nk-form-group">
+                <label>Cost opening stock (Chi phí tồn đầu kỳ):</label>
+                <input type="number" id="cost_opening_stock" name="cost_opening_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost Input (Chi phí nhập):</label>
+                <input type="number" id="cost_input" name="cost_input" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost Output (Chi phí xuất):</label>
+                <input type="number" id="cost_output" name="cost_output" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost closing stock (Chi phí tồn cuối kỳ):</label>
+                <input type="number" id="cost_closing_stock" name="cost_closing_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost safety stock (Chi phí tồn kho an toàn):</label>
+                <input type="number" id="cost_safety_stock" name="cost_safety_stock" placeholder="0" step="any" value="0">
+            </div>
+
+            <!-- Thông tin giá -->
+            <div class="nk-form-group">
+                <label>Price (Giá):</label>
+                <input type="number" id="price" name="price" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Currency (Tiền tệ):</label>
+                <select id="currency" name="currency">
+                    <option value="VND" selected>VND</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="JPY">JPY</option>
+                </select>
+            </div>
+
+            <!-- Thông tin người nhập -->
+            <div class="nk-form-group">
+                <label>Imported by (Người nhập):</label>
+                <input type="text" id="imported_by" name="imported_by" placeholder="Nhập tên người nhập">
+            </div>
+
+            <!-- Thông tin hệ thống (chỉ đọc) -->
+            <div class="nk-form-group">
+                <label>Last update (Cập nhật cuối):</label>
+                <input type="datetime-local" id="last_update" name="last_update" readonly style="background: #f5f5f5;">
+            </div>
+            <div class="nk-form-group">
+                <label>Last time (Thời gian cuối):</label>
+                <input type="datetime-local" id="last_time" name="last_time" readonly style="background: #f5f5f5;">
+            </div>
+
+            <div style="width: 100%; text-align: center; margin-top: 20px;">
+                <button type="button" id="autofillBtn" class="nk-btn-main" style="margin-right: 16px;">🔍 Autofill</button>
+                <button type="submit" class="nk-btn-main">💾 Lưu dữ liệu vào báo cáo</button>
+            </div>
+        </form>
+
+        <div id="result" style="text-align:center;font-weight:600;margin-top:20px;"></div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/bao-cao" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                📋 Xem báo cáo 30 cột
+            </a> | 
+            <a href="/" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                🏠 Về trang chủ
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Set current time for last_update and last_time fields when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const currentDateTime = now.toISOString().slice(0, 16);
+            document.getElementById('last_update').value = currentDateTime;
+            document.getElementById('last_time').value = currentDateTime;
+        });
+
+        // Form submission handler
+        document.getElementById('report-form').onsubmit = async function(e) {
+            e.preventDefault();
+            console.log('Form submitted');
+
+            // Collect form data - exactly matching the 30-column structure
+            const data = {
+                group_name: document.getElementById('group_name').value,
+                product_code: document.getElementById('product_code').value,
+                classification: document.getElementById('classification').value,
+                part_code: document.getElementById('part_code').value,
+                material_name: document.getElementById('material_name').value,
+                specification: document.getElementById('specification').value,
+                brand_name: document.getElementById('brand_name').value,
+                unit: document.getElementById('unit').value,
+                opening_stock: document.getElementById('opening_stock').value,
+                input: document.getElementById('input').value,
+                output: document.getElementById('output').value,
+                closing_stock: document.getElementById('closing_stock').value,
+                inventory: document.getElementById('inventory').value,
+                location: document.getElementById('location').value,
+                safety_stock: document.getElementById('safety_stock').value,
+                purchase_se: document.getElementById('purchase_se').value,
+                purchase_order: document.getElementById('purchase_order').value,
+                cost_opening_stock: document.getElementById('cost_opening_stock').value,
+                cost_input: document.getElementById('cost_input').value,
+                cost_output: document.getElementById('cost_output').value,
+                cost_closing_stock: document.getElementById('cost_closing_stock').value,
+                cost_safety_stock: document.getElementById('cost_safety_stock').value,
+                price: document.getElementById('price').value,
+                currency: document.getElementById('currency').value,
+                imported_by: document.getElementById('imported_by').value,
+                last_update: document.getElementById('last_update').value,
+                last_time: document.getElementById('last_time').value
+            };
+            
+            console.log('Form data:', data);
+
+            // Show loading indicator
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading">⏳ Đang lưu dữ liệu...</div>';
+            
+            try {
+                console.log('Sending request...');
+                const response = await fetch('/bo-sung-bao-cao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Bạn cần đăng nhập để thực hiện chức năng này');
+                    } else if (response.status === 403) {
+                        throw new Error('Bạn không có quyền thực hiện chức năng này');
+                    } else {
+                        throw new Error(`Lỗi server: ${response.status}`);
+                    }
+                }
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (result.status === 'success') {
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message || 'Bổ sung dữ liệu báo cáo thành công!'}</div>`;
+                    
+                    // Reset form after successful submission
+                    document.getElementById('report-form').reset();
+                    
+                    // Reset datetime fields
+                    const now = new Date();
+                    const currentDateTime = now.toISOString().slice(0, 16);
+                    document.getElementById('last_update').value = currentDateTime;
+                    document.getElementById('last_time').value = currentDateTime;
+                    document.getElementById('currency').value = 'VND';
+                    
+                    // Show success message for 5 seconds then fade out
+                    setTimeout(() => {
+                        resultDiv.innerHTML = '';
+                    }, 5000);
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message || 'Có lỗi xảy ra!'}</div>`;
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                resultDiv.innerHTML = `<div class="error">❌ ${err.message}</div>`;
+            }
+            return false;
+        }
+
+        // Tách chức năng autofill ra nút riêng
+        document.getElementById('autofillBtn').addEventListener('click', function() {
+            const specificationInput = document.getElementById('specification');
+            const specification = specificationInput.value.trim();
+            if (!specification) {
+                alert('Vui lòng nhập Specification trước khi autofill!');
+                return;
+            }
+            // Hiện loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.id = 'loading-msg';
+            loadingMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1976d2;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+            loadingMsg.innerHTML = '🔍 Đang tìm kiếm thông tin vật tư...<br><small>Vui lòng đợi...</small>';
+            document.body.appendChild(loadingMsg);
+            const searchUrl = `/api/search-material?specification=${encodeURIComponent(specification)}`;
+            fetch(searchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const loading = document.getElementById('loading-msg');
+                    if (loading) loading.remove();
+                    if (data.status === 'success' && data.material) {
+                        const material = data.material;
+                        if (confirm(`Đã tìm thấy vật tư:\n🏷️ Tên: ${material.material_name || 'N/A'}\n📦 Mã hàng: ${material.product_code || 'N/A'}\n🏢 Nhóm: ${material.group_name || 'N/A'}\n🏭 Nhà SX: ${material.brand_name || 'N/A'}\n\nBạn có muốn tự động điền thông tin không?`)) {
+                            const fieldsToFill = [
+                                'group_name', 'product_code', 'classification', 'part_code', 
+                                'material_name', 'brand_name', 'unit', 'location',
+                                'opening_stock', 'input', 'output', 'closing_stock', 
+                                'inventory', 'safety_stock', 'purchase_se', 'purchase_order', 
+                                'cost_opening_stock', 'cost_input', 'cost_output', 'cost_closing_stock', 
+                                'cost_safety_stock', 'price', 'currency', 'imported_by'
+                            ];
+                            let filledCount = 0;
+                            fieldsToFill.forEach(fieldName => {
+                                const element = document.getElementById(fieldName);
+                                if (element && material[fieldName] != null && material[fieldName] !== '') {
+                                    element.value = material[fieldName];
+                                    filledCount++;
+                                }
+                            });
+                            const now = new Date().toISOString().slice(0, 16);
+                            document.getElementById('last_update').value = now;
+                            document.getElementById('last_time').value = now;
+                            const successMsg = document.createElement('div');
+                            successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#4caf50;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                            successMsg.innerHTML = `✅ Đã tự động điền ${filledCount} trường thông tin!<br><small>Kiểm tra và chỉnh sửa nếu cần</small>`;
+                            document.body.appendChild(successMsg);
+                            setTimeout(() => successMsg.remove(), 5000);
+                        }
+                    } else if (data.status === 'not_found') {
+                        const infoMsg = document.createElement('div');
+                        infoMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#ff9800;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        infoMsg.innerHTML = '🆕 Đây là vật tư mới<br><small>Vui lòng điền đầy đủ thông tin</small>';
+                        document.body.appendChild(infoMsg);
+                        setTimeout(() => infoMsg.remove(), 4000);
+                    } else {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#f44336;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        errorMsg.innerHTML = `❌ Lỗi: ${data.message}<br><small>Vui lòng thử lại</small>`;
+                        document.body.appendChild(errorMsg);
+                        setTimeout(() => errorMsg.remove(), 4000);
+                    }
+                })
+                .catch(error => {
+                    const loading = document.getElementById('loading-msg');
+                    if (loading) loading.remove();
+                    const errorMsg = document.createElement('div');
+                    errorMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#f44336;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                    errorMsg.innerHTML = '❌ Lỗi kết nối<br><small>Không thể tìm kiếm thông tin vật tư</small>';
+                    document.body.appendChild(errorMsg);
+                    setTimeout(() => errorMsg.remove(), 4000);
+                });
+        });
+    </script>
+    
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

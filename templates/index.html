@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý xuất nhập kho QR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #f4f8fd;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .quick-btn, .export-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+        }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+        #qr-reader {
+            width: 100%;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+        }
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        label {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        input[type="text"], input[type="number"] {
+            border: 1px solid #b6c6e3;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 1rem;
+            background: #f4f8fd;
+            transition: border 0.2s;
+        }
+        input:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+            background: #eaf3fc;
+        }
+        button[type="submit"] {
+            background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+            color: #fff;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1.1rem;
+            margin-top: 8px;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+            transform: translateY(-2px) scale(1.03);
+        }
+        #result {
+            margin-top: 16px;
+            font-size: 1.05rem;
+            min-height: 24px;
+            color: #388e3c;
+            font-weight: 500;
+            text-align: center;
+        }
+        #history-wrap {
+            width: 100%;
+            max-width: 1100px;
+            margin: 24px auto 0 auto;
+        }
+        #history-search {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            width: 100%;
+            max-width: 350px;
+            border-radius: 8px;
+            border: 1px solid #b6c6e3;
+        }
+        #history-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.06);
+        }
+        #history-table th, #history-table td {
+            padding: 8px 8px;
+        }
+        #history-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        #history-table tr {
+            transition: background 0.2s;
+        }
+        #history-table tr:hover {
+            background: #f1f8ff;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px 4px 14px 4px;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+        }
+        .footer {
+            text-align: center;
+            padding: 12px 0;
+            background: #1976d2;
+            color: #fff;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            border-top: 4px solid #42a5f5;
+        }
+    </style>
+</head>
+<body>
+<nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+            </div>
+        </div>
+    </nav>
+<div class="container">
+    <h2>Nhập kho sản phẩm mới</h2>
+    <form id="data-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 700px; width: 100%; background: #f8fbff; border-radius: 12px; padding: 18px 12px 8px 12px; box-shadow: 0 2px 8px rgba(25,118,210,0.06); margin-bottom: 18px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label>Mã code:</label>
+            <input type="text" id="ma-code" name="ma_code" required>
+            <label>Phân loại (Classify):</label>
+            <input type="text" id="classify" name="classify" required>
+            <label>Part code:</label>
+            <input type="text" id="part-code" name="part_code" required>
+            <label>Tên vật tư (Material name):</label>
+            <input type="text" id="material-name" name="material_name" required>
+            <label>Specification/Drawing:</label>
+            <input type="text" id="specification" name="specification" required>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label>Thương hiệu (Brand):</label>
+            <input type="text" id="brand" name="brand" required>
+            <label>Nhà cung cấp (Providers):</label>
+            <input type="text" id="providers" name="providers" required>
+            <label>Đơn vị (Unit):</label>
+            <input type="text" id="unit" name="unit" required>
+            <label>MH & Loại:</label>
+            <input type="text" id="mh-loai" name="mh_loai" required>
+            <label>Công dụng:</label>
+            <input type="text" id="cong-dung" name="cong_dung" required>
+            <label>Số lượng:</label>
+            <input type="number" id="quantity" name="quantity" min="1" required>
+            <button type="submit" style="margin-top:12px;">Tạo mã QR & Lưu</button>
+        </div>
+    </form>
+    <div id="result"></div>
+    <div id="qr-download" style="margin-top:16px;"></div>
+    <div id="history-wrap" style="width:100%;max-width:1100px;margin:24px auto 0 auto;">
+        <h3 style="color:#1976d2;margin-bottom:8px;">Lịch sử nhập kho gần đây</h3>
+        <input type="text" id="history-search" placeholder="Tìm kiếm nhanh..." style="margin-bottom:10px;padding:8px 12px;width:100%;max-width:350px;border-radius:8px;border:1px solid #b6c6e3;">
+        <div style="overflow-x:auto;width:100%;">
+        <table id="history-table" style="width:100%;border-collapse:separate;border-spacing:0;margin-top:0;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(25,118,210,0.06);">
+            <thead style="position:sticky;top:0;z-index:2;">
+                <tr style="background:#1976d2;color:#fff;">
+                    <th style="padding:8px 8px;">STT</th>
+                    <th style="padding:8px 8px;">Mã code</th>
+                    <th style="padding:8px 8px;">Phân loại</th>
+                    <th style="padding:8px 8px;">Part code</th>
+                    <th style="padding:8px 8px;">Tên vật tư</th>
+                    <th style="padding:8px 8px;">Specification/Drawing</th>
+                    <th style="padding:8px 8px;">Thương hiệu</th>
+                    <th style="padding:8px 8px;">Nhà cung cấp</th>
+                    <th style="padding:8px 8px;">Đơn vị</th>
+                    <th style="padding:8px 8px;">MH & Loại</th>
+                    <th style="padding:8px 8px;">Công dụng</th>
+                    <th style="padding:8px 8px;">Số lượng</th>
+                    <th style="padding:8px 8px;">QR code</th>
+                    <th style="padding:8px 8px;">Ngày nhập</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in recent_products %}
+                <tr class="history-row">
+                    <td style="padding:7px 8px;">{{ loop.index }}</td>
+                    <td style="padding:7px 8px;">{{ p.ma_code }}</td>
+                    <td style="padding:7px 8px;">{{ p.classify }}</td>
+                    <td style="padding:7px 8px;">{{ p.part_code }}</td>
+                    <td style="padding:7px 8px;">{{ p.material_name }}</td>
+                    <td style="padding:7px 8px;">{{ p.specification }}</td>
+                    <td style="padding:7px 8px;">{{ p.brand }}</td>
+                    <td style="padding:7px 8px;">{{ p.providers }}</td>
+                    <td style="padding:7px 8px;">{{ p.unit }}</td>
+                    <td style="padding:7px 8px;">{{ p.mh_loai }}</td>
+                    <td style="padding:7px 8px;">{{ p.cong_dung }}</td>
+                    <td style="padding:7px 8px;">{{ p.quantity }}</td>
+                    <td style="padding:7px 8px;"><a href="/static/qr_codes/{{ p.qr_code }}.png" target="_blank">QR code</a></td>
+                    <td style="padding:7px 8px;">{{ p.timestamp if p.timestamp else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% if products %}
+    <h3 style="margin-top:28px;color:#1976d2;">Danh sách sản phẩm đã nhập kho</h3>
+    <div style="overflow-x:auto;width:100%;">
+    <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+        <thead>
+            <tr style="background:#e3f0ff;color:#1976d2;">
+                <th style="padding:6px 8px;">STT</th>
+                <th style="padding:6px 8px;">Mã code</th>
+                <th style="padding:6px 8px;">Phân loại</th>
+                <th style="padding:6px 8px;">Part code</th>
+                <th style="padding:6px 8px;">Tên vật tư</th>
+                <th style="padding:6px 8px;">Specification/Drawing</th>
+                <th style="padding:6px 8px;">Thương hiệu</th>
+                <th style="padding:6px 8px;">Nhà cung cấp</th>
+                <th style="padding:6px 8px;">Đơn vị</th>
+                <th style="padding:6px 8px;">MH & Loại</th>
+                <th style="padding:6px 8px;">Công dụng</th>
+                <th style="padding:6px 8px;">Số lượng</th>
+                <th style="padding:6px 8px;">QR code</th>
+                <th style="padding:6px 8px;">Xóa</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td style="padding:6px 8px;">{{ loop.index }}</td>
+                <td style="padding:6px 8px;">{{ p.ma_code }}</td>
+                <td style="padding:6px 8px;">{{ p.classify }}</td>
+                <td style="padding:6px 8px;">{{ p.part_code }}</td>
+                <td style="padding:6px 8px;">{{ p.material_name }}</td>
+                <td style="padding:6px 8px;">{{ p.specification }}</td>
+                <td style="padding:6px 8px;">{{ p.brand }}</td>
+                <td style="padding:6px 8px;">{{ p.providers }}</td>
+                <td style="padding:6px 8px;">{{ p.unit }}</td>
+                <td style="padding:6px 8px;">{{ p.mh_loai }}</td>
+                <td style="padding:6px 8px;">{{ p.cong_dung }}</td>
+                <td style="padding:6px 8px;">{{ p.quantity }}</td>
+                <td style="padding:6px 8px;"><a href="/static/qr_codes/{{ p.qr_code }}.png" target="_blank" style="background:#1976d2;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-weight:600;">QR code</a></td>
+                <td style="padding:6px 8px;"><button onclick="deleteProduct('{{ p.qr_code }}')" style="background:#d32f2f;color:#fff;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Xóa</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</div>
+<footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+<script>
+    document.getElementById('data-form').onsubmit = async function(e) {
+        e.preventDefault();
+        // Lấy dữ liệu các trường mới
+        const ma_code = document.getElementById('ma-code').value;
+        const classify = document.getElementById('classify').value;
+        const part_code = document.getElementById('part-code').value;
+        const material_name = document.getElementById('material-name').value;
+        const specification = document.getElementById('specification').value;
+        const brand = document.getElementById('brand').value;
+        const providers = document.getElementById('providers').value;
+        const unit = document.getElementById('unit').value;
+        const mh_loai = document.getElementById('mh-loai').value;
+        const cong_dung = document.getElementById('cong-dung').value;
+        const quantity = document.getElementById('quantity').value;
+        if (!ma_code || !classify || !part_code || !material_name || !specification || !brand || !providers || !unit || !mh_loai || !cong_dung || !quantity) {
+            document.getElementById('result').innerText = 'Vui lòng nhập đầy đủ thông tin!';
+            document.getElementById('result').style.color = '#d32f2f';
+            return;
+        }
+        const res = await fetch('/create-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ma_code, classify, part_code, material_name, specification, brand, providers, unit, mh_loai, cong_dung, quantity })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('result').innerText = 'Đã lưu và tạo mã QR thành công!';
+            document.getElementById('result').style.color = '#388e3c';
+            document.getElementById('data-form').reset();
+            document.getElementById('qr-download').innerHTML = `<a href="${data.qr_url}" download="qr_code.png">Tải mã QR sản phẩm</a>`;
+        } else {
+            document.getElementById('result').innerText = 'Lỗi: ' + data.message;
+            document.getElementById('result').style.color = '#d32f2f';
+        }
+    }
+
+    function deleteProduct(qr_code) {
+        if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
+        fetch('/delete-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qr_code })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        });
+    }
+
+    // Lọc tìm kiếm nhanh cho bảng lịch sử nhập kho
+    document.getElementById('history-search').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#history-table .history-row');
+        rows.forEach(row => {
+            let show = false;
+            row.querySelectorAll('td').forEach(td => {
+                if (td.innerText.toLowerCase().includes(filter)) show = true;
+            });
+            row.style.display = show ? '' : 'none';
+        });
+    });
+</script>
+</body>
+</html>

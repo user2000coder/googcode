@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử kiểm kê kho</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        body {font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container { max-width: 1200px; margin: 40px auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(25,118,210,0.08); padding: 32px 20px; }
+        h1 { color: #1976d2; margin-bottom: 18px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        th, td { border: 1px solid #b6c6e3; padding: 8px 10px; text-align: center; }
+        th { background: #e3f0ff; color: #1976d2; }
+        tr:nth-child(even) { background: #f4f8fd; }
+    </style>
+</head>
+<body>
+<nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+            </div>
+        </div>
+    </nav>
+<div class="container">
+    <h1>Lịch sử kiểm kê kho</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã QR</th>
+                <th>Tên vật tư</th>
+                <th>Thương hiệu</th>
+                <th>Thông số kỹ thuật</th>
+                <th>Số lượng kiểm kê</th>
+                <th>Đơn giá</th>
+                <th>Giá trị kiểm kê</th>
+                <th>Thời gian kiểm kê</th>
+                <th>Người kiểm kê</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row['qr_code'] }}</td>
+                <td>{{ row['material_name'] }}</td>
+                <td>{{ row['brand'] }}</td>
+                <td>{{ row['specification'] }}</td>
+                <td>{{ row['inventory'] }}</td>
+                <td>{% if row['price'] %}{{ row['price'] }}{% else %}-{% endif %}</td>
+                <td>{% if row['value'] %}{{ row['value'] }}{% else %}-{% endif %}</td>
+                <td>{{ row['checked_at'] }}</td>
+                <td>{{ row['user'] }}</td>
+            </tr>
+            {% endfor %}        </tbody>
+    </table>
+</div>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

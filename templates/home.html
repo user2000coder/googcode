@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Vật tư PE</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #f4f8fd;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        .title-box {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(80,60,180,0.10);
+            padding: 24px 0 18px 0;
+            margin: 24px auto 18px auto;
+            text-align: center;
+        }
+        .title-box h1 {
+            color: #6c47c7;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .title-box p {
+            color: #063cec;
+            font-size: 1.08rem;
+            margin: 0;
+        }
+        .search-bar {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 24px auto;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(80,60,180,0.08);
+            padding: 8px 16px;
+        }
+        .search-bar input {
+            border: none;
+            outline: none;
+            font-size: 1.08rem;
+            width: 100%;
+            background: transparent;
+            padding: 10px 0;
+        }
+        .stats-row {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+            border-radius: 16px;
+            min-width: 160px;
+            flex: 1 1 180px;
+            max-width: 220px;
+            padding: 22px 0 18px 0;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(80,60,180,0.10);
+            margin-bottom: 8px;
+        }
+        .stat-card .icon {
+            font-size: 2.1rem;
+            margin-bottom: 6px;
+        }
+        .stat-card .value {
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+        .stat-card .label {
+            font-size: 1.05rem;
+            margin-top: 2px;
+        }
+        .quick-row {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(80,60,180,0.08);
+            padding: 18px;
+            flex: 1 1 380px;
+            min-width: 340px;
+            max-width: 420px;
+        }
+        .quick-actions h3, .recent-activity h3 {
+            color: #6c47c7;
+            font-size: 1.15rem;
+            margin: 0 0 12px 0;
+            font-weight: 700;
+        }
+        .quick-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        .quick-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 18px;
+            font-size: 1.08rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(80,60,180,0.10);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            text-decoration: none;
+        }
+        .quick-btn:hover { background: linear-gradient(90deg, #5f3dc4 0%, #7c3aed 100%); }
+        .recent-list {
+            margin: 0; padding: 0; list-style: none;
+        }
+        .recent-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f4f8fd;
+            color: #444;
+            font-size: 1.01rem;
+        }
+        .recent-list li:last-child { border-bottom: none; }
+        .recent-list .icon { color: #7c3aed; font-size: 1.1rem; }
+        .alerts-section h3 {
+            color: #e53935;
+            font-size: 1.12rem;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+        .alert-list {
+            margin: 0; padding: 0; list-style: none;
+        }
+        .alert-list li {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 1.01rem;
+            font-weight: 500;
+        }
+        .alert-red { background: #ffdde0; color: #d32f2f; }
+        .alert-yellow { background: #fff9c4; color: #bfa100; }
+        .alert-blue { background: #e3f0ff; color: #1976d2; }
+        .alert-cyan { background: #e0f7fa; color: #00838f; }
+        .alert-pink { background: #fce4ec; color: #ad1457; }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+    </style>
+</head>
+<body>    <nav>
+        <div>            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div><div class="nav-menu">                {% if session['role'] == 'SEQPEKHO' %}
+                <a href="/nhap-kho">Nhập kho</a>
+                {% endif %}                {% if session['role'] in ['SEQPEKHO', 'SEQPELINE'] %}
+                <a href="/xuat-kho">Xuất kho</a>
+                {% endif %}
+                {% if session['role'] == 'SEQPEKHO' %}
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+                {% endif %}
+                <a href="/logout" style="color: #d32f2f;">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+    <div class="main-container">
+        <div class="title-box">
+            <h1><span>📁</span> Hệ thống Quản lý Vật tư PE</h1>
+            <p>Xin chào, {{ session['username'] }} ({{ session['role'] }})</p>
+        </div>
+        <form class="search-bar" autocomplete="off">
+            <input type="text" placeholder="Tìm kiếm vật tư, mã kho, hoặc nhà cung cấp...">
+        </form>
+        <div class="stats-row">
+            <div class="stat-card"><div class="icon">📦</div><div class="value">{{ total_materials }}</div><div class="label">TỔNG VẬT TƯ</div></div>
+            <div class="stat-card"><div class="icon">⚠️</div><div class="value">{{ low_stock_count }}</div><div class="label">CẢNH BÁO THIẾU HÀNG</div></div>
+            <div class="stat-card"><div class="icon">📝</div><div class="value">{{ input_today }}</div><div class="label">NHẬP KHO HÔM NAY</div></div>
+            <div class="stat-card"><div class="icon">📤</div><div class="value">{{ output_today }}</div><div class="label">XUẤT KHO HÔM NAY</div></div>
+        </div>
+        <div class="quick-row">
+            <div class="quick-actions">
+                <h3>Thao tác nhanh</h3>                <div class="quick-btns">
+                    {% if session['role'] == 'SEQPEKHO' %}
+                    <a href="/nhap-kho" class="quick-btn">📥 Nhập kho</a>
+                    {% endif %}
+                    {% if session['role'] in ['SEQPEKHO', 'SEQPELINE'] %}
+                    <a href="/xuat-kho" class="quick-btn">📤 Xuất kho</a>
+                    {% endif %}
+                    {% if session['role'] == 'SEQPEKHO' %}
+                    <a href="/danh-sach" class="quick-btn">📋 Lịch sử</a>
+                    <a href="/kiem-ke" class="quick-btn">✅ Kiểm kê kho</a>
+                    <a href="/bao-cao" class="quick-btn">📊 Báo cáo</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="recent-activity">
+                <h3>Hoạt động gần đây</h3>
+                <ul class="recent-list">
+                    {% for act in recent_activities %}
+                        <li>
+                            <span class="icon">{% if act[0]=='input' %}📥{% elif act[0]=='output' %}📤{% else %}📝{% endif %}</span>
+                            {% if act[0]=='input' %}Nhập{% else %}Xuất{% endif %} {{ act[2]|int }} {{ act[1] }}
+                            {% if act[4] %}<span style="color:#888;font-size:0.97rem;">({{ act[4] }})</span>{% endif %}
+                            <span style="color:#888;font-size:0.97rem;">{{ act[3] }}</span>
+                        </li>
+                    {% else %}
+                        <li>Không có hoạt động gần đây</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="alerts-section">
+            <h3>Cảnh báo tồn kho</h3>
+            <ul class="alert-list">
+                {% for alert in low_stock_alerts %}
+                    <li class="alert-red">{{ alert[0] }} ({{ alert[1] }}): Chỉ còn {{ alert[2]|int }} (Tồn đầu kỳ: {{ alert[3]|int }})</li>
+                {% else %}
+                    <li class="alert-blue">Không có vật tư nào dưới mức cảnh báo tồn kho.</li>
+                {% endfor %}            </ul>
+        </div>
+    </div>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

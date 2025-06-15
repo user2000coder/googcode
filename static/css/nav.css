@@ -1,0 +1,52 @@
+/* Navigation styles */
+nav {
+    width: 100vw;
+    background: #1976d2;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+    margin-bottom: 0;
+}
+
+nav div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 ;
+    height: 54px;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.05rem;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 0;
+}
+
+.nav-logo img {
+    max-height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.nav-logo a {
+    font-weight: 700;
+    font-size: 1.18rem;
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-right: 0;
+}

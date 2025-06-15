@@ -1,0 +1,16 @@
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: auto;
+    background-color: #f4f8fd;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Ensure body takes full height for footer positioning */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}

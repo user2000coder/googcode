@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Save Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 300px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #result { margin: 20px 0; padding: 10px; border-radius: 4px; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #cce7ff; color: #004085; border: 1px solid #7bb3e8; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Save Function - Bổ sung dữ liệu</h1>
+    
+    <div id="login-section">
+        <h2>1. Đăng nhập trước</h2>
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" id="username" value="SEQPEKHO">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="password" value="123456">
+        </div>
+        <button onclick="testLogin()">Đăng nhập</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div id="test-section" style="display: none;">
+        <h2>2. Test chức năng lưu</h2>
+        <div class="form-group">
+            <label>Group Name:</label>
+            <input type="text" id="group_name" value="Test Components">
+        </div>
+        <div class="form-group">
+            <label>Product Code:</label>
+            <input type="text" id="product_code" value="TEST-WEB-001">
+        </div>
+        <div class="form-group">
+            <label>Classification:</label>
+            <input type="text" id="classification" value="Electronic">
+        </div>
+        <div class="form-group">
+            <label>Part Code:</label>
+            <input type="text" id="part_code" value="TWB-001">
+        </div>
+        <div class="form-group">
+            <label>Material Name:</label>
+            <input type="text" id="material_name" value="Test Material from Web">
+        </div>
+        <div class="form-group">
+            <label>Specification:</label>
+            <input type="text" id="specification" value="Web test specification for save function">
+        </div>
+        <div class="form-group">
+            <label>Brand Name:</label>
+            <input type="text" id="brand_name" value="Web Test Brand">
+        </div>
+        <div class="form-group">
+            <label>Unit:</label>
+            <input type="text" id="unit" value="PCS">
+        </div>
+        <div class="form-group">
+            <label>Location:</label>
+            <input type="text" id="location" value="WEB-01">
+        </div>
+        <div class="form-group">
+            <label>Supplier Name:</label>
+            <input type="text" id="supplier_name" value="Web Test Supplier">
+        </div>
+        <div class="form-group">
+            <label>Status:</label>
+            <select id="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+        
+        <button onclick="testSave()">💾 Test Save Function</button>
+        <div id="save-result"></div>
+    </div>
+
+    <script>
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('login-result');
+            
+            resultDiv.innerHTML = '<div class="info">Đang đăng nhập...</div>';
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+                
+                console.log('Login response status:', response.status);
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text.includes('home') || response.url.includes('home') || response.status === 200) {
+                        resultDiv.innerHTML = '<div class="success">✅ Đăng nhập thành công!</div>';
+                        document.getElementById('test-section').style.display = 'block';
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ Đăng nhập thất bại - Sai thông tin</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Lỗi đăng nhập: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                resultDiv.innerHTML = '<div class="error">❌ Lỗi kết nối: ' + error.message + '</div>';
+            }
+        }
+
+        async function testSave() {
+            const resultDiv = document.getElementById('save-result');
+            resultDiv.innerHTML = '<div class="info">Đang lưu dữ liệu...</div>';
+            
+            const data = {
+                group_name: document.getElementById('group_name').value,
+                product_code: document.getElementById('product_code').value,
+                classification: document.getElementById('classification').value,
+                part_code: document.getElementById('part_code').value,
+                material_name: document.getElementById('material_name').value,
+                specification: document.getElementById('specification').value,
+                brand_name: document.getElementById('brand_name').value,
+                unit: document.getElementById('unit').value,
+                location: document.getElementById('location').value,
+                supplier_name: document.getElementById('supplier_name').value,
+                status: document.getElementById('status').value,
+                last_update: new Date().toISOString().slice(0, 16),
+                last_time: new Date().toISOString().slice(0, 16)
+            };
+            
+            console.log('Sending data:', data);
+            
+            try {
+                const response = await fetch('/bo-sung-bao-cao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('Save response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Save response data:', result);
+                    
+                    if (result.status === 'success') {
+                        resultDiv.innerHTML = '<div class="success">✅ ' + (result.message || 'Lưu thành công!') + '</div>';
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ ' + (result.message || 'Có lỗi xảy ra!') + '</div>';
+                    }
+                } else {
+                    const text = await response.text();
+                    resultDiv.innerHTML = '<div class="error">❌ HTTP Error ' + response.status + ': ' + text + '</div>';
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                resultDiv.innerHTML = '<div class="error">❌ Lỗi kết nối: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

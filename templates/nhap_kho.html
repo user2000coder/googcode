@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhập kho sản phẩm mới</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body {font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .quick-btn, .export-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+        }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+        .nk-container {
+            max-width: 1100px;
+            margin: 32px auto 0 auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(80, 60, 180, 0.10);
+            padding: 32px 24px 24px 24px;
+        }
+        .nk-title {
+            color: #5f3dc4;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .nk-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px 32px;
+            justify-content: center;
+            margin-bottom: 18px;
+            background: #f4f8fd;
+            padding: 18px 12px 12px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.06);
+        }
+        .nk-form-group {
+            flex: 1 1 320px;
+            min-width: 260px;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .nk-form-group input, .nk-form-group textarea {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #b6c6e3;
+            font-size: 1rem;
+            background: #fafdff;
+        }
+        .nk-form-group textarea { min-height: 38px; }
+        .nk-btns {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-top: 8px;
+        }
+        .nk-btn-main {
+            background: linear-gradient(90deg, #7c3aed 0%, #5f3dc4 100%);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 2px 8px rgba(80, 60, 180, 0.10);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .nk-btn-main:hover { background: linear-gradient(90deg, #5f3dc4 0%, #7c3aed 100%); }
+        .nk-btn-reset {
+            background: #f4f8fd;
+            color: #5f3dc4;
+            border: 1px solid #b6c6e3;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .nk-btn-reset:hover { background: #e3e6f7; }
+        .nk-section {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(80, 60, 180, 0.08);
+            padding: 24px 16px 18px 16px;
+            margin-top: 32px;
+        }
+        .nk-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.06);
+            font-size: 0.98rem;
+            overflow: hidden;
+        }
+        .nk-table th, .nk-table td {
+            border: none;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .nk-table th {
+            background: #e3e6f7;
+            color: #5f3dc4;
+            font-weight: 700;
+        }
+        .nk-table tr:nth-child(even) { background: #f7f8fc; }
+        .nk-table tr:hover { background: #f4f8fd; }
+        .nk-table img { border: 1px solid #b6c6e3; border-radius: 6px; }
+        .nk-table a { color: #5f3dc4; text-decoration: underline; }
+        .nk-table .qr-link { display: inline-block; }
+        .nk-table .qr-link img { width: 38px; height: 38px; object-fit: contain; }
+        .nk-table .qr-link:hover img { box-shadow: 0 0 0 2px #7c3aed; }
+        .nk-table thead { position: sticky; top: 0; z-index: 2; }
+        .nk-table th, .nk-table td { white-space: nowrap; }
+        .nk-table td { font-size: 0.97rem; }
+        .nk-table th { font-size: 1.01rem; }
+        .nk-table td:last-child, .nk-table th:last-child { text-align: center; }
+        .nk-table td {
+            border-bottom: 1px solid #e3e6f7;
+        }
+        .nk-table tr:last-child td { border-bottom: none; }
+        .nk-table th:first-child, .nk-table td:first-child { border-top-left-radius: 12px; }
+        .nk-table th:last-child, .nk-table td:last-child { border-top-right-radius: 12px; }
+        .nk-table th, .nk-table td { vertical-align: middle; }
+        .nk-table th { border-bottom: 2px solid #b6c6e3; }
+        .nk-table td { border-right: 1px solid #f4f8fd; }
+        .nk-table td:last-child { border-right: none; }
+        .nk-table th:last-child { border-right: none; }
+        .nk-table th:first-child { border-left: none; }
+        .nk-table td:first-child { border-left: none; }
+        .nk-table th, .nk-table td { min-width: 80px; }
+        .nk-table th.qr, .nk-table td.qr { min-width: 60px; }
+        .nk-table th.stt, .nk-table td.stt { min-width: 40px; }
+        .nk-table th.location, .nk-table td.location { min-width: 100px; }
+        .nk-table th.spec, .nk-table td.spec { min-width: 120px; }
+        .nk-table th.name, .nk-table td.name { min-width: 120px; }
+        .nk-table th.brand, .nk-table td.brand { min-width: 80px; }
+        .nk-table th.unit, .nk-table td.unit { min-width: 60px; }
+        .nk-table th.qty, .nk-table td.qty { min-width: 60px; }
+        .nk-table th.date, .nk-table td.date { min-width: 120px; }
+        .nk-table th input[type="text"] {
+            width: 100%;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #b6c6e3;
+            font-size: 0.97rem;
+        }
+        .nk-table .qr-link { display: flex; align-items: center; justify-content: center; }
+        .nk-table .qr-link span { margin-left: 4px; font-size: 0.9rem; }
+        .nk-table .qr-link img { margin: 0; }
+        .nk-table .qr-link:hover img { border-color: #7c3aed; }
+        .nk-table .qr-link:active img { border-color: #5f3dc4; }
+        .nk-table .qr-link:focus img { outline: 2px solid #7c3aed; }
+        .nk-table .qr-link:focus { outline: none; }
+        .nk-table .qr-link:active { outline: none; }
+        .nk-table .qr-link:visited { color: #5f3dc4; }
+        .nk-table .qr-link:focus-visible { outline: 2px solid #7c3aed; }
+        .nk-table .qr-link:focus:not(:focus-visible) { outline: none; }
+        .nk-table .qr-link:active { outline: none; }
+        .nk-table .qr-link:visited { color: #5f3dc4; }
+        .nk-table .qr-link:focus-visible { outline: 2px solid #7c3aed; }
+        .nk-table .qr-link:focus:not(:focus-visible) { outline: none; }
+    </style>
+</head>
+<body>    <nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+            </div>
+        </div>
+    </nav>    <div class="nk-container">
+        <div class="nk-title"><span>📦</span> Nhập kho sản phẩm mới</div>
+        
+        <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #1976d2;">
+            <h3 style="margin: 0 0 8px 0; color: #1976d2;">📋 Hướng dẫn:</h3>
+            <p style="margin: 0; color: #1565c0;">
+                • Nhập <strong>Specification</strong> trước để tự động điền thông tin (nếu vật tư đã tồn tại)<br>
+                • Các trường có dấu * là bắt buộc<br>
+                • Nhấn nút "🔍 Auto Fill" để tự động điền thông tin từ specification
+            </p>
+        </div>
+
+        <form id="data-form" class="nk-form">
+            <!-- Thông tin cơ bản -->
+            <div class="nk-form-group">
+                <label>Group use (Nhóm sử dụng) *:</label>
+                <input type="text" id="group_use" name="group_use" required placeholder="Nhập nhóm sử dụng">
+            </div>
+            <div class="nk-form-group">
+                <label>Product code (Mã hàng) *:</label>
+                <input type="text" id="product_code" name="product_code" required placeholder="Nhập mã hàng">
+            </div>
+            <div class="nk-form-group">
+                <label>Classify (Phân loại BU) *:</label>
+                <input type="text" id="classify" name="classify" required placeholder="Nhập phân loại BU">
+            </div>
+            <div class="nk-form-group">
+                <label>Part Code *:</label>
+                <input type="text" id="part_code" name="part_code" required placeholder="Nhập Part Code">
+            </div>
+            <div class="nk-form-group">
+                <label>Material name (Tên hàng hóa) *:</label>
+                <input type="text" id="material_name" name="material_name" required placeholder="Nhập tên hàng hóa">
+            </div>
+            <div class="nk-form-group">
+                <label>Specification/Drawing (Thông số kỹ thuật) * 🔍:</label>
+                <input type="text" id="specification" name="specification" required placeholder="Nhập thông số kỹ thuật và nhấn Tab để auto-fill" 
+                       title="Nhập specification và nhấn Tab để tự động điền thông tin nếu vật tư đã tồn tại">
+                <button type="button" id="autofill-btn" style="margin-top: 8px; background: #4caf50; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔍 Auto Fill</button>
+                <small style="color: #666; font-size: 0.85em;">💡 Gợi ý: Thử nhập "Thread: M6x1.0, Tube OD: 8mm, Material: Brass"</small>
+            </div>
+            <div class="nk-form-group">
+                <label>Brand (Nhà SX) *:</label>
+                <input type="text" id="brand" name="brand" required placeholder="Nhập nhà sản xuất">
+            </div>
+            <div class="nk-form-group">
+                <label>Unit (Đơn vị) *:</label>
+                <input type="text" id="unit" name="unit" required placeholder="Nhập đơn vị (pcs, kg, m...)">
+            </div>
+            <div class="nk-form-group">
+                <label>Location (Vị trí) *:</label>
+                <input type="text" id="location" name="location" required placeholder="A1-B2-C3">
+            </div>
+            <div class="nk-form-group">
+                <label>Người nhập kho *:</label>
+                <input type="text" id="imported_by" name="imported_by" required placeholder="Nhập tên người nhập kho">
+            </div>            <!-- Thông tin tồn kho -->
+            <div class="nk-form-group">
+                <label>Opening stock (Tồn đầu kỳ):</label>
+                <input type="number" id="opening_stock" name="opening_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Closing stock (Tồn cuối kỳ):</label>
+                <input type="number" id="closing_stock" name="closing_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Safety Stock (Tồn kho an toàn):</label>
+                <input type="number" id="safety_stock" name="safety_stock" placeholder="0" step="any" value="0">
+            </div>
+
+            <!-- Thông tin mua hàng -->
+            <div class="nk-form-group">
+                <label>Purchase SE (SE mua hàng):</label>
+                <input type="text" id="purchase_se" name="purchase_se" placeholder="Nhập SE mua hàng">
+            </div>
+            <div class="nk-form-group">
+                <label>Purchase Order (Đơn hàng mua):</label>
+                <input type="text" id="purchase_order" name="purchase_order" placeholder="Nhập số PO">
+            </div>
+
+            <!-- Thông tin chi phí -->
+            <div class="nk-form-group">
+                <label>Cost opening stock (Chi phí tồn đầu kỳ):</label>
+                <input type="number" id="cost_opening_stock" name="cost_opening_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost Input (Chi phí nhập):</label>
+                <input type="number" id="cost_input" name="cost_input" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost Output (Chi phí xuất):</label>
+                <input type="number" id="cost_output" name="cost_output" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost closing stock (Chi phí tồn cuối kỳ):</label>
+                <input type="number" id="cost_closing_stock" name="cost_closing_stock" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Cost safety stock (Chi phí tồn kho an toàn):</label>
+                <input type="number" id="cost_safety_stock" name="cost_safety_stock" placeholder="0" step="any" value="0">
+            </div>
+
+            <!-- Thông tin giá -->
+            <div class="nk-form-group">
+                <label>Price (Giá):</label>
+                <input type="number" id="price" name="price" placeholder="0" step="any" value="0">
+            </div>
+            <div class="nk-form-group">
+                <label>Currency (Tiền tệ):</label>
+                <select id="currency" name="currency">
+                    <option value="VND" selected>VND</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="JPY">JPY</option>
+                </select>
+            </div>
+
+            <div class="nk-form-group">
+                <label>Số lượng *:</label>
+                <input type="number" id="quantity" name="quantity" min="1" required placeholder="Nhập số lượng">
+            </div>
+            <div class="nk-btns" style="flex-basis:100%;justify-content:flex-end;">
+                <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:0.98rem;margin-right:18px;">
+                    <input type="checkbox" id="auto_refresh" checked style="margin-right:4px;"> Tự động làm mới sau khi nhập
+                </label>
+                <button type="reset" class="nk-btn-reset">Làm mới</button>
+                <button type="submit" class="nk-btn-main"><span>📄</span> Tạo mã QR & Lưu</button>
+            </div>
+        </form>
+        <div id="result" style="text-align:center;font-weight:600;"></div>
+        <div id="qr-download" style="margin-top:16px;text-align:center;"></div>
+        <div id="qr-show" style="margin-top:16px;text-align:center;"></div>
+    </div>
+    <div class="nk-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+            <div class="nk-title" style="font-size:1.25rem;margin:0;gap:8px;"><span>📋</span> Lịch sử nhập kho</div>
+            <button id="delete-history-btn" style="background:#d32f2f;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">🗑️ Xóa lịch sử nhập kho</button>
+        </div>
+        <div style="overflow-x:auto;width:100%;">
+        <table class="nk-table">
+            <thead>
+                <tr>
+                    <th class="stt">STT</th>
+                    <th>Group use</th>
+                    <th>Product code</th>
+                    <th>Classify</th>
+                    <th>Part Code</th>
+                    <th class="name">Material name</th>
+                    <th class="spec">Specification</th>
+                    <th class="brand">Brand</th>
+                    <th class="unit">Unit</th>
+                    <th class="location">Location</th>
+                    <th>Người nhập kho</th>
+                    <th class="qty">Số lượng</th>
+                    <th class="date">Ngày nhập</th>
+                    <th class="qr">Mã QR</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td class="stt">{{ loop.index }}</td>
+                    <td>{{ h['group_name'] }}</td>
+                    <td>{{ h['product_code'] }}</td>
+                    <td>{{ h['classification'] }}</td>
+                    <td>{{ h['part_code'] }}</td>
+                    <td class="name">{{ h['material_name'] }}</td>
+                    <td class="spec">{{ h['specification'] }}</td>
+                    <td class="brand">{{ h['brand_name'] }}</td>
+                    <td class="unit">{{ h['unit'] }}</td>
+                    <td class="location">{{ h['location'] }}</td>
+                    <td>{{ h['imported_by'] or h['imported_by'] }}</td>
+                    <td class="qty">{{ h['quantity'] }}</td>
+                    <td class="date">{{ h['created_at'] | format_datetime }}</td>
+                    <td class="qr">
+                        {% if h['specification'] %}
+                        <a class="qr-link" href="/static/qr_codes/{{ h['specification'] }}.png" target="_blank">
+                            <img src="/static/qr_codes/{{ h['specification'] }}.png" alt="QR">
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>    <script>
+        // Auto-fill functionality
+        document.getElementById('autofill-btn').addEventListener('click', function() {
+            const specification = document.getElementById('specification').value.trim();
+            if (!specification) {
+                alert('Vui lòng nhập Specification trước khi autofill!');
+                return;
+            }
+            
+            // Show loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.id = 'loading-msg';
+            loadingMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1976d2;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+            loadingMsg.innerHTML = '🔍 Đang tìm kiếm thông tin vật tư...<br><small>Vui lòng đợi...</small>';
+            document.body.appendChild(loadingMsg);
+            
+            const searchUrl = `/api/search-material?specification=${encodeURIComponent(specification)}`;
+            fetch(searchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const loading = document.getElementById('loading-msg');
+                    if (loading) loading.remove();
+                    
+                    if (data.status === 'success' && data.material) {
+                        const material = data.material;                        if (confirm(`Đã tìm thấy vật tư:\n🏷️ Tên: ${material.material_name || 'N/A'}\n📦 Mã hàng: ${material.product_code || 'N/A'}\n🏢 Nhóm: ${material.group_name || 'N/A'}\n🏭 Nhà SX: ${material.brand_name || 'N/A'}\n\nBạn có muốn tự động điền thông tin không?`)) {
+                            // Auto-fill fields
+                            let filledCount = 0;
+                            
+                            // Basic info
+                            if (material.group_name) { document.getElementById('group_use').value = material.group_name; filledCount++; }
+                            if (material.product_code) { document.getElementById('product_code').value = material.product_code; filledCount++; }
+                            if (material.classification) { document.getElementById('classify').value = material.classification; filledCount++; }
+                            if (material.part_code) { document.getElementById('part_code').value = material.part_code; filledCount++; }
+                            if (material.material_name) { document.getElementById('material_name').value = material.material_name; filledCount++; }
+                            if (material.brand_name) { document.getElementById('brand').value = material.brand_name; filledCount++; }
+                            if (material.unit) { document.getElementById('unit').value = material.unit; filledCount++; }
+                            if (material.location) { document.getElementById('location').value = material.location; filledCount++; }
+                            if (material.imported_by) { document.getElementById('imported_by').value = material.imported_by; filledCount++; }
+                            
+                            // Stock info
+                            if (material.opening_stock !== undefined) { document.getElementById('opening_stock').value = material.opening_stock; filledCount++; }
+                            if (material.closing_stock !== undefined) { document.getElementById('closing_stock').value = material.closing_stock; filledCount++; }
+                            if (material.safety_stock !== undefined) { document.getElementById('safety_stock').value = material.safety_stock; filledCount++; }
+                            
+                            // Purchase info
+                            if (material.purchase_se) { document.getElementById('purchase_se').value = material.purchase_se; filledCount++; }
+                            if (material.purchase_order) { document.getElementById('purchase_order').value = material.purchase_order; filledCount++; }
+                            
+                            // Cost info
+                            if (material.cost_opening_stock !== undefined) { document.getElementById('cost_opening_stock').value = material.cost_opening_stock; filledCount++; }
+                            if (material.cost_input !== undefined) { document.getElementById('cost_input').value = material.cost_input; filledCount++; }
+                            if (material.cost_output !== undefined) { document.getElementById('cost_output').value = material.cost_output; filledCount++; }
+                            if (material.cost_closing_stock !== undefined) { document.getElementById('cost_closing_stock').value = material.cost_closing_stock; filledCount++; }
+                            if (material.cost_safety_stock !== undefined) { document.getElementById('cost_safety_stock').value = material.cost_safety_stock; filledCount++; }
+                            
+                            // Price info
+                            if (material.price !== undefined) { document.getElementById('price').value = material.price; filledCount++; }
+                            if (material.currency) { document.getElementById('currency').value = material.currency; filledCount++; }
+                            
+                            const successMsg = document.createElement('div');
+                            successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#4caf50;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                            successMsg.innerHTML = `✅ Đã tự động điền ${filledCount} trường thông tin!<br><small>Kiểm tra và chỉnh sửa nếu cần</small>`;
+                            document.body.appendChild(successMsg);                            setTimeout(() => successMsg.remove(), 5000);
+                        }
+                    } else if (data.status === 'not_found') {
+                        const infoMsg = document.createElement('div');
+                        infoMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#ff9800;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        infoMsg.innerHTML = '🆕 Đây là vật tư mới<br><small>Vui lòng điền đầy đủ thông tin</small>';
+                        document.body.appendChild(infoMsg);
+                        setTimeout(() => infoMsg.remove(), 4000);
+                    } else {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#f44336;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        errorMsg.innerHTML = '❌ Có lỗi xảy ra<br><small>' + (data.message || 'Không thể tìm kiếm thông tin') + '</small>';
+                        document.body.appendChild(errorMsg);
+                        setTimeout(() => errorMsg.remove(), 4000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const loading = document.getElementById('loading-msg');
+                    if (loading) loading.remove();
+                    
+                    const errorMsg = document.createElement('div');
+                    errorMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#f44336;color:white;padding:15px 25px;border-radius:10px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                    errorMsg.innerHTML = '❌ Lỗi kết nối<br><small>Không thể tìm kiếm thông tin vật tư</small>';
+                    document.body.appendChild(errorMsg);
+                    setTimeout(() => errorMsg.remove(), 4000);
+                });
+        });
+
+        document.getElementById('data-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const autoRefresh = document.getElementById('auto_refresh').checked;            // Get all form values
+            const formData = {
+                group_use: document.getElementById('group_use').value,
+                product_code: document.getElementById('product_code').value,
+                classify: document.getElementById('classify').value,
+                part_code: document.getElementById('part_code').value,
+                material_name: document.getElementById('material_name').value,
+                specification: document.getElementById('specification').value,
+                brand: document.getElementById('brand').value,
+                unit: document.getElementById('unit').value,
+                location: document.getElementById('location').value,
+                imported_by: document.getElementById('imported_by').value,
+                quantity: document.getElementById('quantity').value,
+                opening_stock: document.getElementById('opening_stock').value || 0,
+                closing_stock: document.getElementById('closing_stock').value || 0,
+                safety_stock: document.getElementById('safety_stock').value || 0,
+                purchase_se: document.getElementById('purchase_se').value,
+                purchase_order: document.getElementById('purchase_order').value,
+                cost_opening_stock: document.getElementById('cost_opening_stock').value || 0,
+                cost_input: document.getElementById('cost_input').value || 0,
+                cost_output: document.getElementById('cost_output').value || 0,
+                cost_closing_stock: document.getElementById('cost_closing_stock').value || 0,
+                cost_safety_stock: document.getElementById('cost_safety_stock').value || 0,
+                price: document.getElementById('price').value || 0,
+                currency: document.getElementById('currency').value
+            };
+            
+            // Check required fields
+            const requiredFields = ['group_use', 'product_code', 'classify', 'part_code', 'material_name', 'specification', 'brand', 'unit', 'location', 'quantity', 'imported_by'];
+            for (let field of requiredFields) {
+                if (!formData[field]) {
+                    document.getElementById('result').innerText = 'Vui lòng nhập đầy đủ thông tin bắt buộc!';
+                    document.getElementById('result').style.color = '#d32f2f';
+                    return false;
+                }
+            }
+            
+            document.getElementById('result').innerText = 'Đang xử lý...';
+            document.getElementById('result').style.color = '#1976d2';
+            
+            console.log('Sending data:', formData);
+            
+            fetch('/nhap-kho', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(res => {
+                console.log('Response status:', res.status);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.status === 'success') {
+                    document.getElementById('result').innerText = data.message;
+                    document.getElementById('result').style.color = '#388e3c';
+                    if (data.qr_code) {
+                        document.getElementById('qr-download').innerHTML = 
+                            `<a href="/static/qr_codes/${data.qr_code}.png" download style="background:#1976d2;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">📥 Tải mã QR</a>`;
+                        document.getElementById('qr-show').innerHTML = 
+                            `<img src="/static/qr_codes/${data.qr_code}.png" alt="QR Code" style="max-width:200px;border:1px solid #ddd;border-radius:8px;">`;
+                    }
+                    if (autoRefresh) {
+                        setTimeout(() => window.location.reload(), 2000);
+                    }                } else {
+                    document.getElementById('result').innerText = data.message || 'Có lỗi xảy ra!';
+                    document.getElementById('result').style.color = '#d32f2f';
+                }
+            })
+            .catch(err => {
+                console.error('Error details:', err);
+                document.getElementById('result').innerText = 'Có lỗi xảy ra: ' + err.message;
+                document.getElementById('result').style.color = '#d32f2f';
+            });return false;
+        }
+        
+        document.getElementById('delete-history-btn').onclick = function() {
+            if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử nhập kho?')) return;
+            fetch('/delete-nhap-kho-history', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Có lỗi khi xóa lịch sử!');
+                    }
+                })
+                .catch(() => alert('Có lỗi khi gửi yêu cầu xóa lịch sử!'));
+        }
+    </script>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

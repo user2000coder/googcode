@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo tồn kho - Quản lý kho PEs</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        body {font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .quick-btn, .export-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+        }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        th, td { border: 1px solid #b6c6e3; padding: 8px 10px; text-align: center; }
+        th { background: #e3f0ff; color: #1976d2; }
+        tr:nth-child(even) { background: #f4f8fd; }
+    </style>
+</head>
+<body style="background:#f4f8fd;">
+<nav>
+    <div>
+        <div class="nav-logo">
+            <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+            <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+        </div>
+        <div class="nav-menu">
+            <a href="/nhap-kho">Nhập kho</a>
+            <a href="/xuat-kho">Xuất kho</a>
+            <a href="/danh-sach">Lịch sử</a>
+            <a href="/bao-cao">Báo cáo</a>
+            <a href="/kiem-ke">Kiểm kê kho</a>
+            <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+        </div>
+    </div>
+</nav>
+<div style="display:flex;justify-content:center;align-items:flex-start;min-height:100vh;width:100vw;">
+    <div class="container" style="background:#fff;max-width:1400px;width:98vw;margin:40px auto 32px auto;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.10);padding:32px 18px 32px 18px;">
+        <h1 style="color:#1976d2;margin-bottom:18px;text-align:center;">Báo cáo tồn kho - Quản lý kho PE</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;width:100%;max-width:400px;">
+                <input type="text" id="report-search" placeholder="Tìm kiếm nhanh..." style="padding:8px 12px;width:100%;max-width:350px;border-radius:8px;border:1px solid #b6c6e3;">
+                <button id="delete-selected" style="padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;">🗑 Xóa</button>
+            </div>            <button id="save-all-btn" style="background:#388e3c;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(56,142,60,0.10);">💾 Lưu tất cả</button>
+            <a href="/bao-cao-xls" class="export-btn" style="background:#1976d2;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:600;box-shadow:0 2px 8px rgba(25,118,210,0.10);transition:background 0.2s;">⬇ Xuất Excel</a>
+        </div>
+        <div style="overflow-x:auto;width:100%;">        <table id="report-table" style="min-width:2800px;width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(25,118,210,0.06);font-size:0.98rem;">
+            <thead style="position:sticky;top:0;z-index:2;">                <tr style="background:#1976d2;color:#fff;">
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>STT</th>
+                    <th>material_id</th>
+                    <th>Group use<br>Nhóm sử dụng</th>
+                    <th>Product code<br>Mã hàng</th>
+                    <th>Classify<br>Phân loại BU</th>
+                    <th>Part Code</th>
+                    <th>Material name<br>Tên hàng hóa</th>
+                    <th>Specification/ Drawing<br>Thông số kỹ thuật/ bản vẽ</th>
+                    <th>Brand<br>Nhà SX</th>
+                    <th>Unit<br>Đơn vị</th>
+                    <th>Opening stock<br>Tồn đầu kỳ</th>
+                    <th>Input<br>Nhập</th>
+                    <th>Output<br>Xuất</th>
+                    <th>Closing stock<br>Tồn cuối kỳ</th>
+                    <th>Inventory<br>Kiểm kê</th>
+                    <th>Location<br>Vị trí</th>
+                    <th>Safety Stock<br>Tồn kho an toàn</th>
+                    <th>Purchase SE<br>SE mua hàng</th>
+                    <th>Purchase Order<br>Đơn hàng mua</th>
+                    <th>Cost opening stock<br>Chi phí tồn đầu kỳ</th>
+                    <th>Cost Input<br>Chi phí nhập</th>
+                    <th>Cost Output<br>Chi phí xuất</th>
+                    <th>Cost closing stock<br>Chi phí tồn cuối kỳ</th>
+                    <th>Cost safety stock<br>Chi phí tồn kho an toàn</th>
+                    <th>Price<br>Giá</th>
+                    <th>Currency<br>Tiền tệ</th>
+                    <th>imported_by<br>Người nhập</th>
+                    <th>created_at<br>Thời gian tạo</th>
+                    <th>updated_at<br>Thời gian cập nhật</th>
+                    <th>Last update<br>Cập nhật cuối</th>
+                    <th>last_time<br>Thời gian cuối</th>
+                </tr>
+            </thead>            <tbody>                {% for r in report %}                <tr class="report-row" data-specification="{{ r.specification }}">
+                    <td><input type="checkbox" class="row-checkbox" data-specification="{{ r.specification }}"></td>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ r.material_id }}</td>
+                    <td contenteditable="false" class="editable" data-field="group_name">{{ r.group_name }}</td>
+                    <td contenteditable="false" class="editable" data-field="product_code">{{ r.product_code }}</td>
+                    <td contenteditable="false" class="editable" data-field="classification">{{ r.classification }}</td>
+                    <td contenteditable="false" class="editable" data-field="part_code">{{ r.part_code }}</td>
+                    <td contenteditable="false" class="editable" data-field="material_name">{{ r.material_name }}</td>
+                    <td contenteditable="false" class="editable" data-field="specification">{{ r.specification }}</td>
+                    <td contenteditable="false" class="editable" data-field="brand_name">{{ r.brand_name }}</td>
+                    <td contenteditable="false" class="editable" data-field="unit">{{ r.unit }}</td>
+                    <td contenteditable="false" class="editable" data-field="opening_stock">{{ r.opening_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="input">{{ r.input }}</td>
+                    <td contenteditable="false" class="editable" data-field="output">{{ r.output }}</td>
+                    <td contenteditable="false" class="editable" data-field="closing_stock">{{ r.closing_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="inventory">{{ r.inventory }}</td>
+                    <td contenteditable="false" class="editable" data-field="location">{{ r.location }}</td>                    <td contenteditable="false" class="editable" data-field="safety_stock">{{ r.safety_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="purchase_se">{{ r.purchase_se }}</td>
+                    <td contenteditable="false" class="editable" data-field="purchase_order">{{ r.purchase_order }}</td>
+                    <td contenteditable="false" class="editable" data-field="cost_opening_stock">{{ r.cost_opening_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="cost_input">{{ r.cost_input }}</td>
+                    <td contenteditable="false" class="editable" data-field="cost_output">{{ r.cost_output }}</td>
+                    <td contenteditable="false" class="editable" data-field="cost_closing_stock">{{ r.cost_closing_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="cost_safety_stock">{{ r.cost_safety_stock }}</td>
+                    <td contenteditable="false" class="editable" data-field="price">{{ r.price }}</td>
+                    <td contenteditable="false" class="editable" data-field="currency">{{ r.currency }}</td>
+                    <td contenteditable="false" class="editable" data-field="imported_by">{{ r.imported_by }}</td>
+                    <td contenteditable="false" class="editable" data-field="created_at">{{ r.created_at }}</td>
+                    <td contenteditable="false" class="editable" data-field="updated_at">{{ r.updated_at }}</td>
+                    <td contenteditable="false" class="editable" data-field="last_update">{{ r.last_update }}</td>                    <td contenteditable="false" class="editable" data-field="last_time">{{ r.last_time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div style="text-align:center;margin-top:18px;">
+            <a href="/" style="color:#1976d2;text-decoration:underline;">&larr; Về trang chủ</a>
+        </div>
+    </div>
+</div>
+<script>
+    // Hàm lấy thời gian hiện tại định dạng YYYY-MM-DD HH:MM:SS
+    function getCurrentDateTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+    // Lọc tìm kiếm nhanh cho bảng báo cáo tồn kho
+    document.getElementById('report-search').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#report-table .report-row');
+        rows.forEach(row => {
+            let show = false;
+            row.querySelectorAll('td').forEach(td => {
+                if (td.innerText.toLowerCase().includes(filter)) show = true;
+            });
+            row.style.display = show ? '' : 'none';
+        });
+    });
+    // Chọn tất cả
+    document.getElementById('select-all').addEventListener('change', function() {
+        const checked = this.checked;
+        document.querySelectorAll('.row-checkbox').forEach(cb => { cb.checked = checked; });
+    });
+    // Nút xóa các mục đã chọn
+    document.getElementById('delete-selected').onclick = async function() {
+        const checked = Array.from(document.querySelectorAll('.row-checkbox:checked'));
+        if (checked.length === 0) { alert('Vui lòng chọn sản phẩm để xóa!'); return; }
+        if (!confirm('Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?')) return;
+        let failList = [];
+        // Disable nút xóa để tránh double click
+        const btn = document.getElementById('delete-selected');
+        btn.disabled = true;        await Promise.all(checked.map(async cb => {
+            const specification = cb.getAttribute('data-specification');
+            try {
+                const res = await fetch('/delete-product', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ qr_code: specification })
+                });
+                const result = await res.json();
+                if (!result.status || result.status !== 'success') {
+                    failList.push(specification + (result.message ? ` (${result.message})` : ''));
+                }
+            } catch (e) {
+                failList.push(specification + ' (Lỗi kết nối)');
+            }
+        }));
+        btn.disabled = false;
+        if (failList.length) {
+            alert('Một số vật tư không xóa được:\n' + failList.join('\n'));
+        } else {
+            alert('Đã xóa thành công!');
+        }
+        location.reload();
+    };
+    // Chỉnh sửa và lưu từng dòng báo cáo
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.onclick = function() {
+            const row = btn.closest('tr');
+            row.querySelectorAll('.editable').forEach(td => {
+                // Không cho phép chỉnh sửa last_update và last_time
+                if (td.getAttribute('data-field') === 'last_update' || td.getAttribute('data-field') === 'last_time') {
+                    td.contentEditable = 'false';
+                } else {
+                    td.contentEditable = 'true';
+                    td.style.background = '#e3f0ff'; // Highlight ô đang chỉnh sửa
+                }
+            });
+            btn.disabled = true;
+            btn.style.opacity = 0.6;
+            row.querySelector('.save-btn').style.display = '';
+            row.querySelector('.cancel-btn').style.display = '';
+            // Lưu giá trị cũ để có thể hoàn tác và để biết khóa cũ
+            row._oldValues = {};
+            row.querySelectorAll('.editable').forEach(td => {
+                row._oldValues[td.getAttribute('data-field')] = td.innerText;
+            });
+            // Lưu cả specification cũ để làm khóa cập nhật
+            row._oldSpec = row.querySelector('[data-field="specification"]').innerText.trim();
+        };
+    });
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+        btn.onclick = function() {
+            const row = btn.closest('tr');
+            // Hoàn tác giá trị cũ
+            if(row._oldValues) {
+                row.querySelectorAll('.editable').forEach(td => {
+                    const field = td.getAttribute('data-field');
+                    td.innerText = row._oldValues[field];
+                    td.style.background = '';
+                });
+            }
+            row.querySelectorAll('.editable').forEach(td => td.contentEditable = 'false');
+            row.querySelector('.edit-btn').style.display = '';
+            row.querySelector('.save-btn').style.display = 'none';
+            row.querySelector('.cancel-btn').style.display = 'none';
+            row.querySelector('.edit-btn').disabled = false;
+            row.querySelector('.edit-btn').style.opacity = 1;
+        };
+    });
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.onclick = async function() {
+            const row = btn.closest('tr');
+            // Disable các nút khi đang xử lý
+            btn.disabled = true;
+            btn.style.opacity = 0.6;
+            row.querySelector('.cancel-btn').disabled = true;            // Lấy specification cũ làm khóa cập nhật
+            const oldSpec = row._oldSpec || row.getAttribute('data-specification');
+            const data = { old_specification: oldSpec };
+            row.querySelectorAll('.editable').forEach(td => {
+                // Không gửi last_update, last_time từ frontend (backend sẽ tự cập nhật)
+                if (td.getAttribute('data-field') !== 'last_update' && td.getAttribute('data-field') !== 'last_time') {
+                    data[td.getAttribute('data-field')] = td.innerText.trim();
+                }
+            });
+            try {
+                const res = await fetch('/update-bao-cao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    // Cập nhật lại last_update và last_time trên giao diện (dùng thời gian hiện tại)
+                    const nowStr = getCurrentDateTime();
+                    row.querySelector('[data-field="last_update"]').innerText = nowStr;
+                    row.querySelector('[data-field="last_time"]').innerText = nowStr;
+                    btn.innerText = 'Đã lưu';
+                    btn.style.background = '#388e3c';
+                    setTimeout(()=>{btn.innerText='Lưu';btn.style.background='';}, 1200);
+                    row.querySelectorAll('.editable').forEach(td => {
+                        td.contentEditable = 'false';
+                        td.style.background = '';
+                    });
+                    row.querySelector('.edit-btn').style.display = '';
+                    btn.style.display = 'none';
+                    row.querySelector('.cancel-btn').style.display = 'none';
+                    row.querySelector('.edit-btn').disabled = false;
+                    row.querySelector('.edit-btn').style.opacity = 1;
+                    // Cập nhật lại data-part-code nếu specification đổi
+                    row.setAttribute('data-part-code', data['specification']);
+                    alert('Cập nhật thành công!');
+                } else {
+                    btn.innerText = 'Lỗi';
+                    btn.style.background = '#d32f2f';
+                    alert('Lỗi: ' + (result.message || 'Không xác định'));
+                    setTimeout(()=>{btn.innerText='Lưu';btn.style.background='';}, 1200);
+                }
+            } catch (err) {
+                console.error('Lỗi khi gọi API:', err);
+                alert('Lỗi mạng hoặc server. Vui lòng thử lại!');
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = 1;
+                row.querySelector('.cancel-btn').disabled = false;
+            }
+        };
+    });
+    document.getElementById('save-all-btn').onclick = async function() {
+        const rows = document.querySelectorAll('#report-table .report-row');
+        let successCount = 0, failCount = 0;        for (const row of rows) {
+            const specification = row.getAttribute('data-specification');
+            const data = { old_specification: specification };
+            row.querySelectorAll('.editable').forEach(td => {
+                data[td.getAttribute('data-field')] = td.innerText.trim();
+            });
+            const res = await fetch('/update-bao-cao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if(result.status === 'success') successCount++; else failCount++;
+        }
+        alert(`Đã lưu ${successCount} dòng thành công${failCount ? (', ' + failCount + ' dòng lỗi!') : ''}`);
+        location.reload();    };
+</script>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>

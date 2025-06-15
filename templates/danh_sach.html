@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử giao dịch kho</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <style>
+        html, body {height: 100%; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3 { color: #1976d2; }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e3f0ff;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .tab.active {
+            color: #1976d2;
+            border-bottom: 3px solid #1976d2;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #b6c6e3;
+            padding: 10px 14px;
+            text-align: left;
+        }
+        th {
+            background: #e3f0ff;
+            color: #1976d2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) { background: #f4f8fd; }
+        .search-box {
+            margin: 20px 0;
+            width: 100%;
+            max-width: 400px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #b6c6e3;
+            border-radius: 8px;
+        }
+        .transaction-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .type-input { background: #e8f5e9; color: #2e7d32; }
+        .type-output { background: #fbe9e7; color: #d84315; }
+        .type-inventory { background: #e3f2fd; color: #1565c0; }
+        @media (max-width: 768px) {
+            .container { padding: 15px; margin: 20px 10px; }
+            table { font-size: 14px; }
+            th, td { padding: 8px; }
+            .tab { padding: 8px 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                {% if session['role'] == 'SEQPEKHO' %}
+                <a href="/nhap-kho">Nhập kho</a>
+                {% endif %}
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/kiem-ke-lich-su">Lịch sử</a>
+                {% if session['role'] == 'SEQPEKHO' %}
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Lịch sử giao dịch kho</h1>
+          <div class="tabs">
+            <button class="tab active" onclick="showTab('all')">Tất cả</button>
+            <button class="tab" onclick="showTab('input')">Nhập kho</button>
+            <button class="tab" onclick="showTab('output')">Xuất kho</button>
+            {% if session['role'] == 'SEQPEKHO' %}
+            <button class="tab" onclick="showTab('inventory')">Kiểm kê</button>
+            {% endif %}
+        </div>
+
+        {% if session['role'] in ['admin', 'SEQPEKHO'] %}
+        <div style="margin: 20px 0; text-align: right;">
+            <button id="deleteHistoryBtn" onclick="confirmDeleteHistory()" 
+                    style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                🗑️ Xóa toàn bộ lịch sử
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã, tên vật tư..." onkeyup="filterTable()">
+        </div>
+
+        <div class="tab-content active" id="all">
+            <table id="historyTable">
+                <thead>
+                    
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Loại</th>
+                        <th>Mã vật tư</th>
+                        <th>Tên vật tư</th>
+                        <th>Quy cách</th>
+                        <th>Số lượng</th>
+                        <th>Vị trí</th>
+                        <th>Người thực hiện</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history %}
+                    <tr>
+                        <td>{{ item.created_at|format_datetime }}</td>
+                        <td>
+                            <span class="transaction-type type-{{ item.transaction_type }}">
+                                {% if item.transaction_type == 'input' %}
+                                Nhập kho
+                                {% elif item.transaction_type == 'output' %}
+                                Xuất kho
+                                {% else %}
+                                Kiểm kê
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ item.part_code }}</td>
+                        <td>{{ item.material_name }}</td>
+                        <td>{{ item.specification }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.location }}</td>
+                        <td>{{ item.created_by }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab
+            event.currentTarget.classList.add('active');
+            
+            // Filter table based on selected tab
+            filterTable(tabName);
+        }
+
+        function filterTable(tabType = 'all') {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const table = document.getElementById('historyTable');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName('td');
+                let txtValue = '';
+                let showRow = false;
+                
+                // Get transaction type
+                const typeCell = td[1].textContent.toLowerCase();
+                
+                // Check if row should be shown based on tab
+                if (tabType === 'all' || 
+                    (tabType === 'input' && typeCell.includes('nhập')) ||
+                    (tabType === 'output' && typeCell.includes('xuất')) ||
+                    (tabType === 'inventory' && typeCell.includes('kiểm'))) {
+                    
+                    // Search in all columns
+                    for (let j = 0; j < td.length; j++) {
+                        txtValue += td[j].textContent || td[j].innerText;
+                    }
+                    
+                    if (txtValue.toLowerCase().indexOf(searchText) > -1) {
+                        showRow = true;
+                    }
+                }
+                  tr[i].style.display = showRow ? '' : 'none';
+            }
+        }
+
+        // Hàm xác nhận xóa lịch sử
+        function confirmDeleteHistory() {
+            if (confirm('⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ LỊCH SỬ GIAO DỊCH?\n\nHành động này KHÔNG THỂ HOÀN TÁC!')) {
+                if (confirm('🚨 XÁC NHẬN LẦN CUỐI!\n\nTất cả dữ liệu lịch sử sẽ bị xóa vĩnh viễn. Bạn có chắc chắn?')) {
+                    deleteTransactionHistory();
+                }
+            }
+        }
+
+        // Hàm gọi API xóa lịch sử
+        function deleteTransactionHistory() {
+            const btn = document.getElementById('deleteHistoryBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Đang xóa...';
+
+            fetch('/delete-transaction-history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ ' + data.message);
+                    location.reload(); // Tải lại trang để cập nhật danh sách
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Có lỗi xảy ra khi xóa lịch sử');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '🗑️ Xóa toàn bộ lịch sử';
+            });
+        }
+    </script>
+</body>
+</html>

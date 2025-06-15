@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xuất kho sản phẩm</title>    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body {font-family: 'Roboto', Arial, sans-serif; background: #f4f8fd; margin: 0; }
+        .container, .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25,118,210,0.08);
+            padding: 32px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, label, th {
+            color: #1976d2;
+        }
+        button, .quick-btn, .export-btn {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #1976d2 !important;
+            color: #fff !important;
+        }
+        .quick-actions, .recent-activity, .alerts-section {
+            background: #fff !important;
+        }
+        .success { color: #388e3c; }
+        .error { color: #d32f2f; }
+        #qr-reader { width: 100%; max-width: 400px; margin: 0 auto 18px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(25,118,210,0.08); }
+        form { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+        label { font-size: 1rem; color: #333; margin-bottom: 2px; }
+        input[type="text"], input[type="number"] { border: 1px solid #b6c6e3; border-radius: 8px; padding: 10px 12px; font-size: 1rem; background: #f4f8fd; transition: border 0.2s; }
+        input:focus { border: 1.5px solid #1976d2; outline: none; background: #eaf3fc; }
+        button { background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%); color: #fff; font-weight: 700; border: none; border-radius: 8px; padding: 12px; font-size: 1.1rem; margin-top: 8px; box-shadow: 0 2px 8px rgba(25,118,210,0.10); cursor: pointer; transition: background 0.2s, transform 0.1s; }
+        button:hover { background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%); transform: translateY(-2px) scale(1.03); }
+        #result { margin-top: 16px; font-size: 1.05rem; min-height: 24px; color: #388e3c; font-weight: 500; text-align: center; }
+        .table-wrap { max-width: 700px; margin: 24px auto 0 auto; overflow-x:auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0; }
+        th, td { border: 1px solid #b6c6e3; padding: 8px 10px; text-align: center; }
+        th { background: #e3f0ff; color: #1976d2; }
+        tr:nth-child(even) { background: #f4f8fd; }
+        .remove-btn { background:#d32f2f;color:#fff;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:600; }
+        @media (max-width: 600px) { .container { padding: 0; } .table-wrap { padding: 0 4px; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <div>
+            <div class="nav-logo">
+                <img src="/static/SUMIDA-LOGO.jpg" alt="Sumida Logo" style="max-height:48px;width:auto;" />
+                <a href="/" style="font-weight:700;font-size:1.18rem;">📁 Trang chủ</a>
+            </div>
+            <div class="nav-menu">
+                <a href="/nhap-kho">Nhập kho</a>
+                <a href="/xuat-kho">Xuất kho</a>
+                <a href="/danh-sach">Lịch sử</a>
+                <a href="/bao-cao">Báo cáo</a>
+                <a href="/kiem-ke">Kiểm kê kho</a>
+                <a href="/bo-sung-du-lieu">Bổ sung dữ liệu</a>
+            </div>
+        </div>
+    </nav>
+<div class="container">
+    <div class="header">
+        <a href="/">🏠 Home</a>
+        <a href="javascript:history.back()">⬅ Quay lại</a>
+    </div>
+    <h2>Xuất kho sản phẩm</h2>
+    <div id="qr-reader"></div>
+    <form id="add-form">
+        <label>Thông số:</label>
+        <input type="text" id="qr-code" name="qr_code" required>
+        <div id="product-info" style="margin:8px 0 0 0;color:#1976d2;font-weight:500;"></div>
+        <label>Số lượng xuất:</label>
+        <input type="number" id="quantity" name="quantity" min="1" required>
+        <label>Người xuất kho:</label>
+        <input type="text" id="exported_by" name="exported_by" required placeholder="Nhập tên người xuất kho">
+        <button type="button" onclick="addToList()">Thêm vào danh sách</button>
+    </form>
+    <div class="table-wrap">
+        <table id="export-list-table" style="display:none;">
+            <thead>
+                <tr style="background:#e3f0ff;color:#1976d2;">
+                    <th style="padding:6px 8px;">STT</th>
+                    <th style="padding:6px 8px;">Mã hàng</th>
+                    <th style="padding:6px 8px;">Tên vật tư</th>
+                    <th style="padding:6px 8px;">Phân loại</th>
+                    <th style="padding:6px 8px;">Số lượng xuất</th>
+                    <th style="padding:6px 8px;">QR code</th>
+                    <th style="padding:6px 8px;">Xóa</th>
+                </tr>
+            </thead>
+            <tbody id="export-list-body"></tbody>
+        </table>
+    </div>
+    <button id="export-btn" style="display:none;max-width:400px;margin:24px auto 0 auto;">Xuất kho</button>
+    <div id="result"></div>
+</div>
+<script>
+    let exportList = [];
+    let productCache = {};
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('qr-code').value = decodedText;
+        fetchProductInfo(decodedText);
+    }
+    let config = { fps: 10, qrbox: 250, facingMode: { exact: 'user' } };
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader", config
+    );
+    html5QrcodeScanner.render(onScanSuccess);    document.getElementById('qr-code').addEventListener('change', function() {
+        fetchProductInfo(this.value);
+    });
+
+    // Thêm sự kiện khi nhấn Enter trong trường thông số
+    document.getElementById('qr-code').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchProductInfo(this.value);
+        }
+    });
+    function fetchProductInfo(qr_code) {
+        if (!qr_code) {
+            document.getElementById('product-info').innerText = '';
+            return;
+        }
+        if (productCache[qr_code]) {
+            showProductInfo(productCache[qr_code]);
+            return;
+        }
+        fetch(`/api/product-info/${qr_code}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    productCache[qr_code] = data.product;
+                    showProductInfo(data.product);
+                } else {
+                    document.getElementById('product-info').innerText = 'Không tìm thấy sản phẩm!';
+                }
+            });
+    }
+    function showProductInfo(product) {
+        document.getElementById('product-info').innerText =
+            `Tên vật tư: ${product.material_name} | Hãng: ${product.brand_name || product.brand} | Quy cách: ${product.specification} | Mã hàng: ${product.part_code} | Phân loại BU: ${product.classify || product.classification || ''}`;
+    }
+    function addToList() {
+        const qr_code = document.getElementById('qr-code').value;
+        const quantity = document.getElementById('quantity').value;
+        const exported_by = document.getElementById('exported_by').value;
+        const product = productCache[qr_code];
+        if (!qr_code || !quantity || !product || !exported_by) {
+            alert('Vui lòng quét mã QR, kiểm tra thông tin, nhập số lượng và người xuất kho!');
+            return;
+        }
+        exportList.push({ 
+            qr_code, 
+            specification: product.specification || qr_code, 
+            material_name: product.material_name, 
+            classify: product.classify || product.classification || '',
+            quantity,
+            exported_by
+        });
+        renderExportList();
+        document.getElementById('add-form').reset();
+        document.getElementById('qr-code').value = '';
+        document.getElementById('product-info').innerText = '';
+    }
+    function renderExportList() {
+        const tbody = document.getElementById('export-list-body');
+        tbody.innerHTML = '';
+        exportList.forEach((item, idx) => {
+            tbody.innerHTML += `<tr><td>${idx+1}</td><td>${item.specification}</td><td>${item.material_name}</td><td>${item.classify}</td><td>${item.quantity}</td><td><a href='/static/qr_codes/${item.specification}.png' target='_blank'>QR code</a></td><td><button class='remove-btn' onclick='removeFromList(${idx})'>Xóa</button></td></tr>`;
+        });
+        document.getElementById('export-list-table').style.display = exportList.length ? '' : 'none';
+        document.getElementById('export-btn').style.display = exportList.length ? '' : 'none';
+    }
+    function removeFromList(idx) {
+        exportList.splice(idx, 1);
+        renderExportList();
+    }
+    document.getElementById('export-btn').onclick = async function() {
+        if (!exportList.length) return;
+        const res = await fetch('/xuat-kho-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: exportList })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('result').innerText = 'Xuất kho thành công!';
+            document.getElementById('result').style.color = '#388e3c';
+            exportList = [];
+            renderExportList();
+        } else {
+            document.getElementById('result').innerText = 'Lỗi: ' + data.message;
+            document.getElementById('result').style.color = '#d32f2f';
+        }    }
+</script>
+    <footer class="footer">
+        Phát triển bởi SEQPE
+    </footer>
+</body>
+</html>
